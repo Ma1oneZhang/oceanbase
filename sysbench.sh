@@ -1,0 +1,1 @@
+obd test sysbench obcluster --time=14 --threads=50 --tables=40 --table-size=108630 --database=test --tenant=test --script-name=oltp_point_select --sysbench-script-dir=/usr/share/sysbench
