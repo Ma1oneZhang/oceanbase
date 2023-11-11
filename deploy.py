@@ -178,10 +178,9 @@ if __name__ == "__main__":
     os.chdir(args.cluster_home_path)
     observer_cmd = f"{bin_abs_path} {observer_args}"
     _logger.info(observer_cmd)
-    # exit(0)
     shell_result = subprocess.run(observer_cmd, shell=True)
     _logger.info("deploy done. returncode=%d", shell_result.returncode)
-    
+
     time.sleep(2)
     try:
         db = __try_to_connect(args.ip, int(args.mysql_port))
@@ -192,8 +191,10 @@ if __name__ == "__main__":
         if args.self_host:
             input("press any key to bootstrap")
             if args.profile:
+                _logger.info("start profiling")
                 subprocess.Popen(
-                    "perf record -a -F 999 -g -p $(pgrep -U ziyang observer)", shell=True
+                    "perf record -a -F 999 -g -p $(pgrep -U $USER observer)",
+                    shell=True,
                 )
         bootstrap_begin = datetime.datetime.now()
         cursor.execute(

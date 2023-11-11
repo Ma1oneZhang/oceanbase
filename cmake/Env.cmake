@@ -1,4 +1,4 @@
-ob_define(DEBUG_PREFIX "-fdebug-prefix-map=${CMAKE_SOURCE_DIR}=.")
+# ob_define(DEBUG_PREFIX "-fdebug-prefix-map=${CMAKE_SOURCE_DIR}=.")
 ob_define(OB_LD_BIN ld)
 ob_define(ASAN_IGNORE_LIST "${CMAKE_SOURCE_DIR}/asan_ignore_list.txt")
 
@@ -78,22 +78,22 @@ endif()
 
 if(OB_BUILD_CLOSE_MODULES)
   # SECURITY, 包含3个功能点
-  ob_define(OB_BUILD_TDE_SECURITY ON)
-  ob_define(OB_BUILD_AUDIT_SECURITY ON)
-  ob_define(OB_BUILD_LABEL_SECURITY ON)
+  ob_define(OB_BUILD_TDE_SECURITY OFF)
+  ob_define(OB_BUILD_AUDIT_SECURITY OFF)
+  ob_define(OB_BUILD_LABEL_SECURITY OFF)
   # 字符集
   ob_define(OB_BUILD_FULL_CHARSET ON)
   # SPM功能
   ob_define(OB_BUILD_SPM ON)
 
   # oralce
-  ob_define(OB_BUILD_ORACLE_PARSER ON)
-  ob_define(OB_BUILD_ORACLE_PL ON)
-  ob_define(OB_BUILD_ORACLE_XML ON)
+  ob_define(OB_BUILD_ORACLE_PARSER OFF)
+  ob_define(OB_BUILD_ORACLE_PL OFF)
+  ob_define(OB_BUILD_ORACLE_XML OFF)
   # dblink
-  ob_define(OB_BUILD_DBLINK ON)
+  ob_define(OB_BUILD_DBLINK OFF)
   # 仲裁功能
-  ob_define(OB_BUILD_ARBITRATION ON)
+  ob_define(OB_BUILD_ARBITRATION OFF)
 
   # 默认使用BABASSL
   ob_define(OB_USE_BABASSL ON)
@@ -160,7 +160,7 @@ set(OB_OBJCOPY_BIN "${DEVTOOLS_DIR}/bin/objcopy")
 # Full RELRO: -Wl,-z,relro,-z,now
 ob_define(OB_RELRO_FLAG "-Wl,-z,relro,-z,now")
 
-ob_define(OB_USE_CCACHE OFF)
+ob_define(OB_USE_CCACHE ON)
 if (OB_USE_CCACHE)
   find_program(OB_CCACHE ccache PATHS "${DEVTOOLS_DIR}/bin" NO_DEFAULT_PATH)
   if (NOT OB_CCACHE)
