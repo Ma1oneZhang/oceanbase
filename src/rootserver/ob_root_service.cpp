@@ -1856,11 +1856,18 @@ int ObRootService::self_check()
 int ObRootService::after_restart()
 {
   ObCurTraceId::init(GCONF.self_addr_);
-
+  if(!this->is_bootstraped_.load()){
+    // fast return OB_TIMEOUT if bootstrap is NOT done
+    return -4012;
+  }
   // avoid concurrent with bootstrap
   FLOG_INFO("[ROOTSERVICE_NOTICE] try to get lock for bootstrap in after_restart");
+  FLOG_INFO("[MYINFO] try to lock for bootstrap in after_restart");
+  auto now = ObTimeUtility::current_time();
   ObLatchRGuard guard(bootstrap_lock_, ObLatchIds::RS_BOOTSTRAP_LOCK);
-
+  FLOG_INFO("[MYINFO] Already lock for bootstrap in after_restart");
+  FLOG_INFO("[MYINFO] wait for bootstrap lock in after_restart", K(ObTimeUtility::current_time() - now));
+  now = ObTimeUtility::current_time();
   // NOTE: Following log print after lock
   FLOG_INFO("[ROOTSERVICE_NOTICE] start to do restart task");
 
@@ -1912,6 +1919,7 @@ int ObRootService::after_restart()
   }
 
   // NOTE: Following log print after lock
+  FLOG_INFO("[MYINFO] HOLD THE LOCK FOR BOOTSTRAP IN AFTER_RESTART", K(ObTimeUtility::current_time() - now));
   FLOG_INFO("[ROOTSERVICE_NOTICE] finish do restart task", KR(ret));
   return ret;
 }
@@ -1963,7 +1971,11 @@ int ObRootService::execute_bootstrap(const obrpc::ObBootstrapArg &arg)
     update_cpu_quota_concurrency_in_memory_();
     // avoid bootstrap and do_restart run concurrently
     FLOG_INFO("[ROOTSERVICE_NOTICE] try to get lock for bootstrap in execute_bootstrap");
+    FLOG_INFO("[MYINFO] try to get lock for bootstrap in execute_bootstrap");
+    auto now = ObTimeUtility::current_time();
     ObLatchWGuard guard(bootstrap_lock_, ObLatchIds::RS_BOOTSTRAP_LOCK);
+    FLOG_INFO("[MYINFO] wait for lock bootstrap in execute_bootstrap, spend time", K(ObTimeUtility::current_time() - now));
+    now = ObTimeUtility::current_time();
     FLOG_INFO("[ROOTSERVICE_NOTICE] success to get lock for bootstrap in execute_bootstrap");
     ObBootstrap bootstrap(rpc_proxy_, *lst_operator_, ddl_service_, unit_manager_,
                           *config_, arg, common_proxy_);
@@ -2022,6 +2034,10 @@ int ObRootService::execute_bootstrap(const obrpc::ObBootstrapArg &arg)
                 KR(ret), K(tmp_ret));
     }
     ret = OB_SUCC(ret) ? tmp_ret : ret;
+    FLOG_INFO("[MYINFO] HOLD THE LOCK FOR BOOTSTRAP IN EXECUTE_BOOTSTRAP, spend time", K(ObTimeUtility::current_time() - now));
+  }
+  if(!OB_FAIL(ret)){
+    is_bootstraped_.store(true);
   }
   BOOTSTRAP_LOG(INFO, "execute_bootstrap finished", K(ret));
   return ret;
@@ -5555,11 +5571,16 @@ int ObRootService::ObRefreshServerTask::process()
   int ret = OB_SUCCESS;
   const bool load_frozen_status = true;
   const bool need_retry = true;
-  FLOG_INFO("refresh server task process");
+  FLOG_INFO("[MYINFO] refresh server task process");
+  FLOG_INFO("[MYINFO] try to get the lock");
+  auto now = ObTimeUtility::current_time();
   ObLatchRGuard guard(root_service_.bootstrap_lock_, ObLatchIds::RS_BOOTSTRAP_LOCK);
+  FLOG_INFO("[MYINFO] get the lock, spend time", K(ObTimeUtility::current_time() - now));
+  now = ObTimeUtility::current_time();
   if (OB_FAIL(root_service_.refresh_server(load_frozen_status, need_retry))) {
     FLOG_WARN("refresh server failed", K(ret), K(load_frozen_status));
   } else {}
+  FLOG_INFO("[MYINFO] total spend time", K(ObTimeUtility::current_time() - now));
   return ret;
 }
 

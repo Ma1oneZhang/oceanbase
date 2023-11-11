@@ -892,6 +892,7 @@ private:
 
   int parallel_ddl_pre_check_(const uint64_t tenant_id);
 private:
+  std::atomic<bool> is_bootstraped_{false};
   static const int64_t OB_MAX_CLUSTER_REPLICA_COUNT = 10000000;
   static const int64_t OB_ROOT_SERVICE_START_FAIL_COUNT_UPPER_LIMIT = 5;
   bool inited_;
