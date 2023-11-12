@@ -10,6 +10,7 @@
  * See the Mulan PubL v2 for more details.
  */
 
+#include "lib/file/ob_file.h"
 #define USING_LOG_PREFIX RS
 
 #include "observer/ob_server.h"
@@ -113,6 +114,7 @@
 #include "parallel_ddl/ob_create_table_helper.h" // ObCreateTableHelper
 #include "parallel_ddl/ob_create_view_helper.h"  // ObCreateViewHelper
 
+#include <fstream>
 namespace oceanbase
 {
 
@@ -1856,9 +1858,13 @@ int ObRootService::self_check()
 int ObRootService::after_restart()
 {
   ObCurTraceId::init(GCONF.self_addr_);
-  if(!this->is_bootstraped_.load()){
-    // fast return OB_TIMEOUT if bootstrap is NOT done
-    return -4012;
+  {
+    std::fstream readfile("./sustech_dbg_bootstraped", std::ios::in);
+    if (!readfile.is_open()) {
+      readfile.close();
+      FLOG_INFO("[MYINFO] not bootstarped yet, fast return OB_TIMEOUT");
+      return OB_TIMEOUT;
+    }
   }
   // avoid concurrent with bootstrap
   FLOG_INFO("[ROOTSERVICE_NOTICE] try to get lock for bootstrap in after_restart");
@@ -1974,6 +1980,14 @@ int ObRootService::execute_bootstrap(const obrpc::ObBootstrapArg &arg)
     FLOG_INFO("[MYINFO] try to get lock for bootstrap in execute_bootstrap");
     auto now = ObTimeUtility::current_time();
     ObLatchWGuard guard(bootstrap_lock_, ObLatchIds::RS_BOOTSTRAP_LOCK);
+    {
+      std::ofstream writefile("./sustech_dbg_bootstraped");
+      if (writefile.is_open()) {
+        writefile << "\n";
+        writefile.close();
+      }
+      FLOG_INFO("[MYINFO] created the file for hint the file bootstraped");
+    }
     FLOG_INFO("[MYINFO] wait for lock bootstrap in execute_bootstrap, spend time", K(ObTimeUtility::current_time() - now));
     now = ObTimeUtility::current_time();
     FLOG_INFO("[ROOTSERVICE_NOTICE] success to get lock for bootstrap in execute_bootstrap");
@@ -2035,9 +2049,6 @@ int ObRootService::execute_bootstrap(const obrpc::ObBootstrapArg &arg)
     }
     ret = OB_SUCC(ret) ? tmp_ret : ret;
     FLOG_INFO("[MYINFO] HOLD THE LOCK FOR BOOTSTRAP IN EXECUTE_BOOTSTRAP, spend time", K(ObTimeUtility::current_time() - now));
-  }
-  if(!OB_FAIL(ret)){
-    is_bootstraped_.store(true);
   }
   BOOTSTRAP_LOG(INFO, "execute_bootstrap finished", K(ret));
   return ret;
