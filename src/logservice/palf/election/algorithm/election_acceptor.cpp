@@ -223,7 +223,8 @@ void ElectionAcceptor::on_prepare_request(const ElectionPrepareRequestMsg &prepa
 {
   ELECT_TIME_GUARD(500_ms);
   #define PRINT_WRAPPER KR(ret), K(prepare_req), K(*this)
-  CHECK_SILENCE();// 启动后的要维持一段静默时间，acceptor假装看不到任何消息，以维护lease的正确语义
+  // local不需要分布式正确性
+  // CHECK_SILENCE();// 启动后的要维持一段静默时间，acceptor假装看不到任何消息，以维护lease的正确语义
   int ret = OB_SUCCESS;
   LogPhase phase = (prepare_req.get_role() == common::ObRole::FOLLOWER ? LogPhase::ELECT_LEADER : LogPhase::RENEW_LEASE);
   LOG_PHASE(INFO, phase, "handle prepare request");
@@ -307,7 +308,8 @@ void ElectionAcceptor::on_accept_request(const ElectionAcceptRequestMsg &accept_
 {
   ELECT_TIME_GUARD(500_ms);
   #define PRINT_WRAPPER KR(ret), K(accept_req), K(*this)
-  CHECK_SILENCE();// 启动后的要维持一段静默时间，acceptor假装看不到任何消息，以维护lease的语义
+  // local 不需要正确性
+  // CHECK_SILENCE();// 启动后的要维持一段静默时间，acceptor假装看不到任何消息，以维护lease的语义
   int ret = OB_SUCCESS;
   if (OB_LIKELY(RequestChecker::check_ballot_valid(accept_req,
                                                    this,
