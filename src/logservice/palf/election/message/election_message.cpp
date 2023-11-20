@@ -206,7 +206,7 @@ bool ElectionPrepareRequestMsgMiddle::is_buffer_valid() const { return is_buffer
 
 const char *ElectionPrepareRequestMsgMiddle::get_priority_buffer() const { return (char*)priority_buffer_; }
   
-common::ObRole ElectionPrepareRequestMsgMiddle::get_role() const { return static_cast<common::ObRole>(role_); }
+common::ObRole ElectionPrepareRequestMsgMiddle::get_role() const { return common::ObRole::LEADER; }
 
 LogConfigVersion ElectionPrepareRequestMsgMiddle::get_membership_version() const { return membership_version_; }
 

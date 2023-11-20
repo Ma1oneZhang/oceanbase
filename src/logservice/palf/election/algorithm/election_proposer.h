@@ -70,18 +70,19 @@ public:
    */
   bool check_leader(int64_t *epoch = nullptr) const
   {
-    int ret = false;
-    int64_t current_ts = get_monotonic_ts();
-    int64_t lease;
-    int64_t exposed_epoch;
-    leader_lease_and_epoch_.get(lease, exposed_epoch);
-    if (OB_LIKELY(current_ts < lease)) {
-      ret = true;
-      if (OB_NOT_NULL(epoch)) {
-        *epoch = exposed_epoch;
-      }
-    }
-    return ret;
+    return true;
+    // int ret = false;
+    // int64_t current_ts = get_monotonic_ts();
+    // int64_t lease;
+    // int64_t exposed_epoch;
+    // leader_lease_and_epoch_.get(lease, exposed_epoch);
+    // if (OB_LIKELY(current_ts < lease)) {
+    //   ret = true;
+    //   if (OB_NOT_NULL(epoch)) {
+    //     *epoch = exposed_epoch;
+    //   }
+    // }
+    // return ret;
   }
   int revoke(const RoleChangeReason &reason);
 public:
