@@ -591,7 +591,7 @@ void ObTenantWeakReadService::generate_tenant_weak_read_timestamp_(bool need_pri
     LOG_WARN("scan all partition fail", KR(ret));
   } else if (OB_FAIL(generate_server_version(server_version_epoch_tstamp_, need_print))) {
     LOG_WARN("generate server version for tenant fail", KR(ret), K_(tenant_id), K(index),
-                                                        K(server_version_epoch_tstamp_));
+                                                      K(server_version_epoch_tstamp_));
   } else {
     // do nothing
   }
@@ -902,7 +902,7 @@ int ObTenantWeakReadService::post_cluster_heartbeat_rpc_(const SCN version,
   if (OB_ISNULL(wrs_rpc_)) {
     ret = OB_NOT_INIT;
   } else if (OB_FAIL(get_cluster_service_master_(cluster_service_master))) {
-    LOG_TRACE("get cluster service master fail", KR(ret), K(tenant_id_),
+    LOG_WARN("get cluster service master fail", KR(ret), K(tenant_id_),
         "cluster_service_tablet_id", cluster_service_.get_cluster_service_tablet_id());
   } else if (OB_FAIL(wrs_rpc_->post_cluster_heartbeat(cluster_service_master, tenant_id_, req))) {
     LOG_WARN("post cluster heartbeat fail", KR(ret), K(cluster_service_master), K(tenant_id_),

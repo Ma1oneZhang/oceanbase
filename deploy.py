@@ -188,18 +188,19 @@ if __name__ == "__main__":
         _logger.info(
             f"connect to server success! host={args.ip}, port={args.mysql_port}"
         )
-        if args.self_host:
-            input("press any key to bootstrap")
-            if args.profile:
-                _logger.info("start profiling")
-                subprocess.Popen(
-                    "perf record -a -F 999 -g -p $(pgrep -U $USER observer)",
-                    shell=True,
-                )
+        # if args.self_host:
+        #     input("press any key to bootstrap")
+            # if args.profile:
+            #     _logger.info("start profiling")
+            #     subprocess.Popen(
+            #         "perf record -a -F 999 -g -p $(pgrep -U $USER observer)",
+            #         shell=True,
+            #     )
         bootstrap_begin = datetime.datetime.now()
         cursor.execute(
             f"ALTER SYSTEM BOOTSTRAP ZONE '{args.zone}' SERVER '{rootservice}'"
         )
+        _logger.info(f"bootstrap done: {datetime.datetime.now() - bootstrap_begin}")
         # checkout server status
         cursor.execute("select * from oceanbase.__all_server")
         server_status = cursor.fetchall()

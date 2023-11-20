@@ -309,6 +309,8 @@ int ObServer::init(const ObServerOptions &opts, const ObPLogWriterCfg &log_cfg)
 
     if (FAILEDx(ObQueryRetryCtrl::init())) {
       LOG_ERROR("init retry ctrl failed", KR(ret));
+    } else if (OB_FAIL(ObClockGenerator::init())) {
+      LOG_ERROR("init create clock generator failed", KR(ret));
     } else if (OB_FAIL(ObMdsEventBuffer::init())) {
       LOG_WARN("init MDS event buffer failed", KR(ret));
     } else if (OB_FAIL(ObTableApiProcessorBase::init_session())) {
@@ -381,9 +383,7 @@ int ObServer::init(const ObServerOptions &opts, const ObPLogWriterCfg &log_cfg)
       LOG_ERROR("init auto-increment service failed", KR(ret));
     } else if (OB_FAIL(init_bandwidth_throttle())) {
       LOG_ERROR("init bandwidth_throttle failed", KR(ret));
-    } else if (OB_FAIL(ObClockGenerator::init())) {
-      LOG_ERROR("init create clock generator failed", KR(ret));
-    } else if (OB_FAIL(init_storage())) {
+    }else if (OB_FAIL(init_storage())) {
       LOG_ERROR("init storage failed", KR(ret));
     } else if (OB_FAIL(init_tx_data_cache())) {
       LOG_ERROR("init tx data cache failed", KR(ret));
