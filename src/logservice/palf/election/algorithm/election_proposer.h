@@ -23,6 +23,7 @@
 #include "logservice/palf/election/utils/election_utils.h"
 #include "logservice/palf/election/message/election_message.h"
 #include "ob_clock_generator.h"
+#include <fstream>
 
 namespace oceanbase
 {
@@ -70,19 +71,35 @@ public:
    */
   bool check_leader(int64_t *epoch = nullptr) const
   {
-    return true;
-    // int ret = false;
-    // int64_t current_ts = get_monotonic_ts();
-    // int64_t lease;
-    // int64_t exposed_epoch;
-    // leader_lease_and_epoch_.get(lease, exposed_epoch);
-    // if (OB_LIKELY(current_ts < lease)) {
-    //   ret = true;
-    //   if (OB_NOT_NULL(epoch)) {
-    //     *epoch = exposed_epoch;
-    //   }
-    // }
-    // return ret;
+    static bool need_check_ = false;
+    static bool inited_ = false;
+    if(!inited_){
+      inited_ = true;
+      std::ofstream ofs("./sustech_dbg_bootstraped_for_proposer");
+      if (!ofs.is_open()) {
+        need_check_ = false;
+        ofs << "\n";
+        ofs.flush();
+      }else {
+        need_check_ = true;
+      }
+    }
+    if(need_check_){
+      int ret = false;
+      int64_t current_ts = get_monotonic_ts();
+      int64_t lease;
+      int64_t exposed_epoch;
+      leader_lease_and_epoch_.get(lease, exposed_epoch);
+      if (OB_LIKELY(current_ts < lease)) {
+        ret = true;
+        if (OB_NOT_NULL(epoch)) {
+          *epoch = exposed_epoch;
+        }
+      }
+      return ret;
+    }else {
+      return true;
+    }
   }
   int revoke(const RoleChangeReason &reason);
 public:

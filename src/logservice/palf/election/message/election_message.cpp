@@ -206,7 +206,22 @@ bool ElectionPrepareRequestMsgMiddle::is_buffer_valid() const { return is_buffer
 
 const char *ElectionPrepareRequestMsgMiddle::get_priority_buffer() const { return (char*)priority_buffer_; }
   
-common::ObRole ElectionPrepareRequestMsgMiddle::get_role() const { return common::ObRole::LEADER; }
+common::ObRole ElectionPrepareRequestMsgMiddle::get_role() const { 
+  static bool need_check_ = false;
+  static bool inited_ = false;
+  if (!inited_){
+    inited_ = true;
+    std::ofstream ofs("./sustech_dbg_bootstraped_for_election_msg");
+    if (!ofs.is_open()) {
+      need_check_ = false;
+      ofs << "\n";
+      ofs.flush();
+    }else {
+      need_check_ = true;
+    }
+  }
+  return need_check_ ? static_cast<common::ObRole>(role_) : common::ObRole::LEADER; 
+  }
 
 LogConfigVersion ElectionPrepareRequestMsgMiddle::get_membership_version() const { return membership_version_; }
 
