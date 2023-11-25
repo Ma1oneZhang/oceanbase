@@ -20,6 +20,8 @@
 #include "rootserver/ob_ddl_service.h"
 #include "rootserver/ob_unit_manager.h"
 
+#include <thread>
+
 namespace oceanbase
 {
 namespace common
@@ -165,6 +167,9 @@ private:
       share::schema::ObTableSchema &tschema);
   virtual int broadcast_sys_schema(
       const common::ObSArray<share::schema::ObTableSchema> &table_schemas);
+  static int parallel_create_schema(
+      ObDDLService &ddl_service,
+      ObIArray<ObTableSchema> &table_schemas);
   static int batch_create_schema(
       ObDDLService &ddl_service,
       common::ObIArray<share::schema::ObTableSchema> &table_schemas,
