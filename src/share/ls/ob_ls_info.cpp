@@ -834,18 +834,26 @@ int ObLSInfo::find_leader(const ObLSReplica *&replica) const
       }
       index ++;
     }
-    if (find_index != -1) {
-      if (!replicas_.at(find_index).is_strong_leader()) {
-        ret = OB_ENTRY_NOT_EXIST;
-        LOG_WARN("fail to get leader replica", KR(ret), K(find_index), "role", replicas_.at(find_index).get_role(),
-                 "proposal_id_", replicas_.at(find_index).get_proposal_id(), K(*this));
-      } else {
-        replica = &replicas_.at(find_index);
-      }
-    } else {
-      ret = OB_ENTRY_NOT_EXIST;
-      LOG_WARN("fail to get leader replica", KR(ret), K(*this), "replica count", replicas_.count());
+
+    // omit to check where the replica is a leader
+    if (replicas_.count() > 0) {
+      ObLSReplica tmp_replica(replicas_.at(0));
+      tmp_replica.set_role(LEADER);
+      replica = &tmp_replica;
     }
+    
+    // if (find_index != -1) {
+    //   if (!replicas_.at(find_index).is_strong_leader()) {
+    //     ret = OB_ENTRY_NOT_EXIST;
+    //     LOG_WARN("fail to get leader replica", KR(ret), K(find_index), "role", replicas_.at(find_index).get_role(),
+    //              "proposal_id_", replicas_.at(find_index).get_proposal_id(), K(*this));
+    //   } else {
+    //     replica = &replicas_.at(find_index);
+    //   }
+    // } else {
+    //   ret = OB_ENTRY_NOT_EXIST;
+    //   LOG_WARN("fail to get leader replica", KR(ret), K(*this), "replica count", replicas_.count());
+    // }
   }
   return ret;
 }
