@@ -233,72 +233,83 @@ void ElectionAcceptor::on_prepare_request(const ElectionPrepareRequestMsg &prepa
   } else if (prepare_req.get_membership_version() < p_election_->get_membership_version_()) {
     LOG_PHASE(INFO, phase, "ignore lower membership version request");
   } else if (OB_LIKELY(RequestChecker::check_ballot_valid(prepare_req, this, phase))) {
-    // 0. 收到leader prepare的时候无须比较优先级，直接返回投票结果
-    if (prepare_req.get_role() == common::ObRole::LEADER) {
-      if (prepare_req.get_ballot_number() <= ballot_number_) {
-        LOG_PHASE(WARN, phase, "leader prepare message's ballot number is smaller than self");
-      } else {
-        advance_ballot_number_and_reset_related_states_(prepare_req.get_ballot_number(), phase);
-        ElectionPrepareResponseMsg prepare_res_accept(p_election_->get_self_addr(),
-                                                      p_election_->get_ls_biggest_min_cluster_version_ever_seen_(),
-                                                      prepare_req);
-        prepare_res_accept.set_accepted(ballot_number_, lease_);
-        if (CLICK_FAIL(p_election_->msg_handler_->send(prepare_res_accept))) {
-          LOG_PHASE(WARN, phase, "send prepare response to leader prepare failed");
-        } else {
-          LOG_PHASE(INFO, phase, "receive valid leader prepare message, send vote to him");
-        }
-      }
+    // 单机不需要选举，直接返回投票结果
+    advance_ballot_number_and_reset_related_states_(prepare_req.get_ballot_number(), phase);
+    ElectionPrepareResponseMsg prepare_res_accept(p_election_->get_self_addr(),
+                                                  p_election_->get_ls_biggest_min_cluster_version_ever_seen_(),
+                                                  prepare_req);
+    prepare_res_accept.set_accepted(ballot_number_, lease_);
+    if (CLICK_FAIL(p_election_->msg_handler_->send(prepare_res_accept))) {
+      LOG_PHASE(WARN, phase, "send prepare response to leader prepare failed");
     } else {
-      // 1. 遇到比时间窗口更大的ballot number的时候需要关闭当前的时间窗口
-      if (is_time_window_opened_ && prepare_req.get_ballot_number() > ballot_of_time_window_) {
-        reset_time_window_states_(phase);
-      }
-      // 2. 若时间窗口未开启，需要开启时间窗口
-      if (!is_time_window_opened_ && prepare_req.get_ballot_number() > ballot_of_time_window_) {
-        ballot_of_time_window_ = prepare_req.get_ballot_number();
-        highest_priority_prepare_req_.reset();
-        LOG_PHASE(DEBUG, phase, "advance ballot_of_time_window_");
-        int64_t ballot_of_time_window_when_registered = ballot_of_time_window_;
-        int64_t timewindow_span = 0;
-        if (!lease_.is_expired()) {// 当前Lease有效时，如果有效的时间超过一个最大单程消息延迟，则窗口关闭时机以Lease到期时间为准
-          timewindow_span = std::max(lease_.get_lease_end_ts() - get_monotonic_ts(), CALCULATE_TIME_WINDOW_SPAN_TS() / 2);
-        } else {// 否则视为普通的无主选举流程，窗口需要覆盖两个最大单程消息延迟
-          timewindow_span = CALCULATE_TIME_WINDOW_SPAN_TS();
-        }
-        if (CLICK_FAIL(time_window_task_handle_.reschedule_after(timewindow_span))) {
-          LOG_PHASE(ERROR, phase, "open time window failed");
-        } else {
-          is_time_window_opened_ = true;// 定时任务注册成功，打开时间窗口
-          last_time_window_open_ts_ = ObClockGenerator::getCurrentTime();
-          LOG_PHASE(INFO, phase, "open time window success", K(timewindow_span));
-        }
-      }
-      // 3. 成员版本号是第一优先级，在成员版本号不小于自己的基础上要比较成员版本号的大小，否则将导致分票
-      if (OB_SUCC(ret) && is_time_window_opened_) {// 在时间窗口内，进行计票
-        if (prepare_req.get_ballot_number() != ballot_of_time_window_) {
-          LOG_PHASE(INFO, phase, "prepare request's ballot is not same as time window, just ignore");
-        } else if (!highest_priority_prepare_req_.is_valid()) {
-          highest_priority_prepare_req_ = prepare_req;
-          LOG_PHASE(INFO, phase, "highest priority prepare message will be replaced casuse cached highest prioriy message is invalid");
-          vote_reason_.assign("the only request");
-        } else if (prepare_req.get_membership_version() > highest_priority_prepare_req_.get_membership_version()) {
-          highest_priority_prepare_req_ = prepare_req;
-          LOG_PHASE(INFO, phase, "highest priority prepare message will be replaced casuse new message's membership version is higher");
-          vote_reason_.assign("membership_version is higher");
-        } else if (prepare_req.get_membership_version() < highest_priority_prepare_req_.get_membership_version()) {
-          LOG_PHASE(INFO, phase, "prepare message's membership version not less than self, but not greater than cached highest priority prepare message");
-        } else {
-          // 4. 比较消息和缓存的最高优先级之间的高低
-          if (p_election_->is_rhs_message_higher_(highest_priority_prepare_req_, prepare_req, vote_reason_, true, LogPhase::ELECT_LEADER)) {
-            LOG_PHASE(INFO, phase, "highest priority prepare request will be replaced", K(vote_reason_));
-            highest_priority_prepare_req_ = prepare_req;
-          } else {
-            LOG_PHASE(INFO, phase, "ignore prepare request, cause it has lower priority", K(vote_reason_));
-          }
-        }
-      }
+      LOG_PHASE(INFO, phase, "receive valid leader prepare message, send vote to him");
     }
+    // // 0. 收到leader prepare的时候无须比较优先级，直接返回投票结果
+    // if (prepare_req.get_role() == common::ObRole::LEADER) {
+    //   if (prepare_req.get_ballot_number() <= ballot_number_) {
+    //     LOG_PHASE(WARN, phase, "leader prepare message's ballot number is smaller than self");
+    //   } else {
+    //     advance_ballot_number_and_reset_related_states_(prepare_req.get_ballot_number(), phase);
+    //     ElectionPrepareResponseMsg prepare_res_accept(p_election_->get_self_addr(),
+    //                                                   p_election_->get_ls_biggest_min_cluster_version_ever_seen_(),
+    //                                                   prepare_req);
+    //     prepare_res_accept.set_accepted(ballot_number_, lease_);
+    //     if (CLICK_FAIL(p_election_->msg_handler_->send(prepare_res_accept))) {
+    //       LOG_PHASE(WARN, phase, "send prepare response to leader prepare failed");
+    //     } else {
+    //       LOG_PHASE(INFO, phase, "receive valid leader prepare message, send vote to him");
+    //     }
+    //   }
+    // } else {
+    //   // 1. 遇到比时间窗口更大的ballot number的时候需要关闭当前的时间窗口
+    //   if (is_time_window_opened_ && prepare_req.get_ballot_number() > ballot_of_time_window_) {
+    //     reset_time_window_states_(phase);
+    //   }
+    //   // 2. 若时间窗口未开启，需要开启时间窗口
+    //   if (!is_time_window_opened_ && prepare_req.get_ballot_number() > ballot_of_time_window_) {
+    //     ballot_of_time_window_ = prepare_req.get_ballot_number();
+    //     highest_priority_prepare_req_.reset();
+    //     LOG_PHASE(DEBUG, phase, "advance ballot_of_time_window_");
+    //     int64_t ballot_of_time_window_when_registered = ballot_of_time_window_;
+    //     int64_t timewindow_span = 0;
+    //     if (!lease_.is_expired()) {// 当前Lease有效时，如果有效的时间超过一个最大单程消息延迟，则窗口关闭时机以Lease到期时间为准
+    //       timewindow_span = std::max(lease_.get_lease_end_ts() - get_monotonic_ts(), CALCULATE_TIME_WINDOW_SPAN_TS() / 2);
+    //     } else {// 否则视为普通的无主选举流程，窗口需要覆盖两个最大单程消息延迟
+    //       timewindow_span = CALCULATE_TIME_WINDOW_SPAN_TS();
+    //     }
+    //     if (CLICK_FAIL(time_window_task_handle_.reschedule_after(timewindow_span))) {
+    //       LOG_PHASE(ERROR, phase, "open time window failed");
+    //     } else {
+    //       is_time_window_opened_ = true;// 定时任务注册成功，打开时间窗口
+    //       last_time_window_open_ts_ = ObClockGenerator::getCurrentTime();
+    //       LOG_PHASE(INFO, phase, "open time window success", K(timewindow_span));
+    //     }
+    //   }
+    //   // 3. 成员版本号是第一优先级，在成员版本号不小于自己的基础上要比较成员版本号的大小，否则将导致分票
+    //   if (OB_SUCC(ret) && is_time_window_opened_) {// 在时间窗口内，进行计票
+    //     if (prepare_req.get_ballot_number() != ballot_of_time_window_) {
+    //       LOG_PHASE(INFO, phase, "prepare request's ballot is not same as time window, just ignore");
+    //     } else if (!highest_priority_prepare_req_.is_valid()) {
+    //       highest_priority_prepare_req_ = prepare_req;
+    //       LOG_PHASE(INFO, phase, "highest priority prepare message will be replaced casuse cached highest prioriy message is invalid");
+    //       vote_reason_.assign("the only request");
+    //     } else if (prepare_req.get_membership_version() > highest_priority_prepare_req_.get_membership_version()) {
+    //       highest_priority_prepare_req_ = prepare_req;
+    //       LOG_PHASE(INFO, phase, "highest priority prepare message will be replaced casuse new message's membership version is higher");
+    //       vote_reason_.assign("membership_version is higher");
+    //     } else if (prepare_req.get_membership_version() < highest_priority_prepare_req_.get_membership_version()) {
+    //       LOG_PHASE(INFO, phase, "prepare message's membership version not less than self, but not greater than cached highest priority prepare message");
+    //     } else {
+    //       // 4. 比较消息和缓存的最高优先级之间的高低
+    //       if (p_election_->is_rhs_message_higher_(highest_priority_prepare_req_, prepare_req, vote_reason_, true, LogPhase::ELECT_LEADER)) {
+    //         LOG_PHASE(INFO, phase, "highest priority prepare request will be replaced", K(vote_reason_));
+    //         highest_priority_prepare_req_ = prepare_req;
+    //       } else {
+    //         LOG_PHASE(INFO, phase, "ignore prepare request, cause it has lower priority", K(vote_reason_));
+    //       }
+    //     }
+    //   }
+    // }
   }
   #undef PRINT_WRAPPER
 }
