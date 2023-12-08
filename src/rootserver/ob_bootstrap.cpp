@@ -662,6 +662,10 @@ int ObBootstrap::prepare_create_partition(
   ObArray<ObUnit> units;
   const bool set_primary_zone = false;
   ObTableSchema tschema;
+  LOG_INFO("start prepare create table partition",
+             "table_id", tschema.get_table_id(),
+             "table_name", tschema.get_table_name(),
+             "cluster_role", cluster_role_to_str(arg_.cluster_role_));
   if (OB_FAIL(check_inner_stat())) {
     LOG_WARN("check_inner_stat failed", KR(ret));
   } else if (NULL == func) {
@@ -797,6 +801,8 @@ int ObBootstrap::create_all_partitions()
           LOG_WARN("execute create partition failed", K(ret));
         }
       }
+
+      LOG_INFO("qilong: finish execute create partition");
     }
     if (trans.is_started()) {
       int temp_ret = OB_SUCCESS;
