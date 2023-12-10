@@ -36,6 +36,7 @@ bool ObSchemaService::g_liboblog_mode_ = false;
 ObSchemaOperation::ObSchemaOperation()
     : schema_version_(OB_INVALID_VERSION),
       tenant_id_(OB_INVALID_TENANT_ID),
+      refresh_schema_(true),
       user_id_(0),
       database_id_(0),
       database_name_(""),

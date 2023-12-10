@@ -836,7 +836,7 @@ int ObLSInfo::find_leader(const ObLSReplica *&replica) const
     }
     // omit to check where the replica is a leader
     if (replicas_.count() > 0) {
-      ObLSReplica tmp_replica(replicas_.at(0));
+      auto &tmp_replica = const_cast<ObLSReplica&>(replicas_.at(0));
       tmp_replica.set_role(LEADER);
       replica = &tmp_replica;
     }

@@ -23221,8 +23221,22 @@ int ObDDLService::create_sys_table_schemas(
       const int64_t table_id = table.get_table_id();
       const ObString &table_name = table.get_table_name();
       const ObString *ddl_stmt = NULL;
-      bool need_sync_schema_version = !(ObSysTableChecker::is_sys_table_index_tid(table_id) ||
-                                        is_sys_lob_table(table_id));
+      // bool need_sync_schema_version = !(ObSysTableChecker::is_sys_table_index_tid(table_id) ||
+      //                                   is_sys_lob_table(table_id));
+      bool need_sync_schema_version = false;
+      if(is_core_table(table.get_table_id())){
+        if(i!= tables.count()-1) {
+          if(!is_core_table(tables.at(i+1).get_table_id())){
+            table.refresh_schema_ = true;
+          } else {
+            table.refresh_schema_ = false;
+          }
+        } else {
+          table.refresh_schema_ = true;
+        }
+      } else {
+        table.refresh_schema_ = false;
+      }
       if (OB_FAIL(ddl_operator.create_table(table, trans, ddl_stmt,
                                             need_sync_schema_version,
                                             false /*is_truncate_table*/))) {
