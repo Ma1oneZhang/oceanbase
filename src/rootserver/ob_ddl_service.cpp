@@ -13,12 +13,9 @@
 #define USING_LOG_PREFIX RS
 #include "rootserver/ob_ddl_service.h"
 
-#include "lib/oblog/ob_log.h"
 #include "lib/time/ob_time_utility.h"
-#include "lib/string/ob_strings.h"
 #include "lib/string/ob_sql_string.h"
 #include "lib/hash/ob_placement_hashset.h"
-#include "lib/hash/ob_placement_hashmap.h"
 #include "lib/hash/ob_hashmap.h"
 #include "lib/worker.h"
 #include "lib/container/ob_array_iterator.h"
@@ -23202,38 +23199,6 @@ int ObDDLService::set_log_restore_source(
   return ret;
 }
 
-int ObDDLService::create_sys_table_schemas(
-    ObDDLOperator &ddl_operator,
-    ObMySQLTransaction &trans,
-    common::ObIArray<ObTableSchema> &tables)
-{
-  int ret = OB_SUCCESS;
-  if (OB_FAIL(check_inner_stat())) {
-    LOG_WARN("variable is not init", KR(ret));
-  } else if (OB_ISNULL(sql_proxy_)
-             || OB_ISNULL(schema_service_)) {
-    ret = OB_ERR_UNEXPECTED;
-    LOG_WARN("ptr is null", KR(ret), KP_(sql_proxy), KP_(schema_service));
-  } else {
-    // persist __all_core_table's schema in inner table, which is only used for sys views.
-    for (int64_t i = 0; OB_SUCC(ret) && i < tables.count(); i++) {
-      ObTableSchema &table = tables.at(i);
-      const int64_t table_id = table.get_table_id();
-      const ObString &table_name = table.get_table_name();
-      const ObString *ddl_stmt = NULL;
-      bool need_sync_schema_version = !(ObSysTableChecker::is_sys_table_index_tid(table_id) ||
-                                        is_sys_lob_table(table_id));
-      if (OB_FAIL(ddl_operator.create_table(table, trans, ddl_stmt,
-                                            need_sync_schema_version,
-                                            false /*is_truncate_table*/))) {
-        LOG_WARN("add table schema failed", KR(ret), K(table_id), K(table_name));
-      } else {
-        LOG_INFO("add table schema succeed", K(i), K(table_id), K(table_name));
-      }
-    }
-  }
-  return ret;
-}
 
 
 int ObDDLService::set_sys_ls_status(const uint64_t tenant_id)

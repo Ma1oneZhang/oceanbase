@@ -1,5 +1,6 @@
 ob_set_subtarget(ob_rootserver ALONE
   ob_ddl_service.cpp
+  ob_ddl_service_my.cpp
   ob_root_service.cpp
   ddl_task/ob_ddl_redefinition_task.cpp
   ob_unit_manager.cpp
