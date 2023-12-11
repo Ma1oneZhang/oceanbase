@@ -353,6 +353,7 @@ int ObDDLService::init_tenant_schema(
   LOG_INFO("[CREATE_TENANT] STEP 2.4. finish init tenant schemas", KR(ret),
            K(tenant_id), "cost",
            ObTimeUtility::fast_current_time() - start_time);
+  this->stopped_ = false;
   return ret;
 }
 
