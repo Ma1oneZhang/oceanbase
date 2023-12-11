@@ -189,7 +189,7 @@ if __name__ == "__main__":
             f"connect to server success! host={args.ip}, port={args.mysql_port}"
         )
         if args.self_host:
-            input("press any key to bootstrap")
+            # input("press any key to bootstrap")
             if args.profile:
                 _logger.info("start profiling")
                 subprocess.Popen(

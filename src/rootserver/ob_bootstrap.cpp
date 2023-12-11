@@ -59,7 +59,7 @@
 #ifdef OB_BUILD_TDE_SECURITY
 #include "close_modules/tde_security/share/ob_master_key_getter.h"
 #endif
-
+#include <future>
 namespace oceanbase
 {
 
@@ -982,15 +982,15 @@ int ObBootstrap::parallel_create_schema(
 {
   int ret = OB_SUCCESS;
   int64_t begin = 0;
-  int64_t batch_count = table_schemas.count() / 32;
+  int64_t batch_count = table_schemas.count() / 16;
   const int64_t MAX_RETRY_TIMES = 10;
   int64_t finish_cnt = 0;
-  std::vector<std::thread> ths;
+  std::vector<std::future<void>> ths;
   ObCurTraceId::TraceId *cur_trace_id = ObCurTraceId::get_trace_id();
   const int64_t begin_time = ObTimeUtility::current_time();
   for(int64_t i=0; OB_SUCC(ret) && i < table_schemas.count(); ++i){
     if (table_schemas.count() == (i + 1) || (i + 1 - begin) >= batch_count) {
-      std::thread th([&, begin, i, cur_trace_id] () {
+      ths.push_back(std::async([&, begin, i, cur_trace_id] () {
         int ret = OB_SUCCESS;
         set_thread_name("DDLQueueTh");
         ObCurTraceId::set(*cur_trace_id);
@@ -1012,8 +1012,7 @@ int ObBootstrap::parallel_create_schema(
           }
         }
         LOG_INFO("worker job", K(begin), K(i), K(i-begin), K(ret));
-      });
-      ths.push_back(std::move(th));
+      }));
       if (OB_SUCC(ret)) {
         begin = i + 1;
       }
@@ -1022,7 +1021,7 @@ int ObBootstrap::parallel_create_schema(
   
   // start all threads
   for (auto &th : ths) {
-    th.join();
+    th.get();
   }
 
   const int64_t now = ObTimeUtility::current_time();

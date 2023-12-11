@@ -22824,31 +22824,27 @@ int ObDDLService::broadcast_sys_table_schemas(
       } else if (OB_FAIL(arg.init(tenant_id, sys_schema_version, tables))) {
         LOG_WARN("fail to init arg", KR(ret), K(tenant_id), K(sys_schema_version));
       }
-      const int64_t timeout_ts = ctx.get_timeout(0);
-      for (int64_t i = 0; OB_SUCC(ret) && i < addrs.count(); i++) {
-        const ObAddr &addr = addrs.at(i);
-        if (OB_FAIL(proxy.call(addr, timeout_ts, arg))) {
-          LOG_WARN("fail to send rpc", KR(ret), K(tenant_id),
-                   K(sys_schema_version), K(addr), K(timeout_ts));
-        }
-      } // end for
-
-      ObArray<int> return_code_array;
-      int tmp_ret = OB_SUCCESS; // always wait all
-      if (OB_SUCCESS != (tmp_ret = proxy.wait_all(return_code_array))) {
-        LOG_WARN("wait batch result failed", KR(tmp_ret), KR(ret));
-        ret = OB_SUCC(ret) ? tmp_ret : ret;
+      if (OB_FAIL(proxy.call(GCONF.self_addr_, 50 * 1000, arg))) {
+        LOG_WARN("fail to send rpc", KR(ret), K(tenant_id),
+                  K(sys_schema_version), K(GCONF.self_addr_), K(50 * 1000));
       }
-      for (int64_t i = 0; OB_SUCC(ret) && i < return_code_array.count(); i++) {
-        int res_ret = return_code_array.at(i);
-        const ObAddr &addr = proxy.get_dests().at(i);
-        if (OB_SUCCESS != res_ret
-            && (addr == leader->get_server()
-            || addr == GCONF.self_addr_)) { // leader and rs must succeed
-          ret = res_ret;
-          LOG_WARN("broadcast schema failed", KR(ret), K(addr), K(tenant_id));
-        }
-      } // end for
+      proxy.wait();
+      // ObArray<int> return_code_array;
+      // int tmp_ret = OB_SUCCESS; // always wait all
+      // if (OB_SUCCESS != (tmp_ret = proxy.wait_all(return_code_array))) {
+      //   LOG_WARN("wait batch result failed", KR(tmp_ret), KR(ret));
+      //   ret = OB_SUCC(ret) ? tmp_ret : ret;
+      // }
+      // for (int64_t i = 0; OB_SUCC(ret) && i < return_code_array.count(); i++) {
+      //   int res_ret = return_code_array.at(i);
+      //   const ObAddr &addr = proxy.get_dests().at(i);
+      //   if (OB_SUCCESS != res_ret
+      //       && (addr == leader->get_server()
+      //       || addr == GCONF.self_addr_)) { // leader and rs must succeed
+      //     ret = res_ret;
+      //     LOG_WARN("broadcast schema failed", KR(ret), K(addr), K(tenant_id));
+      //   }
+      // } // end for
     }
   }
   LOG_INFO("[CREATE_TENANT] STEP 2.2. finish broadcast sys table schemas", KR(ret), K(tenant_id),
