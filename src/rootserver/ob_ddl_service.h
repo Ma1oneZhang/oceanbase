@@ -2048,9 +2048,9 @@ private:
       const ObString &tenant_name,
       const share::ObTenantRole &tenant_role);
   int create_sys_table_schemas(
-      ObDDLOperator &ddl_operator,
-      ObMySQLTransaction &trans,
-      common::ObIArray<share::schema::ObTableSchema> &tables);
+      ObDDLOperator &ddl_operator, ObMySQLTransaction &trans,
+      common::ObIArray<share::schema::ObTableSchema> &tables, int start,
+      int end, bool is_parallel);
   int try_force_drop_tenant(const share::schema::ObTenantSchema &tenant_schema);
 
   int handle_security_audit_in_trans(const share::schema::ObSAuditSchema &audit_schema,
