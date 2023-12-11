@@ -22749,9 +22749,9 @@ int ObDDLService::create_tenant_sys_ls(
         timeout = max(timeout, THIS_WORKER.get_timeout_remain());
       }
       int64_t wait_leader_start = ObTimeUtility::current_time();
-      if (OB_FAIL(ls_leader_waiter.wait(tenant_id, SYS_LS, timeout))) {
-        LOG_WARN("fail to wait election leader", KR(ret), K(tenant_id), K(SYS_LS), K(timeout));
-      }
+      // if (OB_FAIL(ls_leader_waiter.wait(tenant_id, SYS_LS, timeout))) {
+      //   LOG_WARN("fail to wait election leader", KR(ret), K(tenant_id), K(SYS_LS), K(timeout));
+      // }
       int64_t wait_leader_end = ObTimeUtility::current_time();
       wait_leader = wait_leader_end - wait_leader_end;
     }
