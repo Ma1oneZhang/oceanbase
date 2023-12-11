@@ -168,24 +168,25 @@ int ObTenantDutyTask::update_tenant_ctx_memory_throttle(uint64_t tenant_id)
 int ObTenantDutyTask::read_tenant_wa_percentage(uint64_t tenant_id, int64_t &pctg)
 {
   int ret = OB_SUCCESS;
-  ObSchemaGetterGuard schema_guard;
-  const ObSysVarSchema *var_schema = NULL;
-  ObObj value;
-  if (OB_ISNULL(GCTX.schema_service_)) {
-    ret = OB_ERR_UNEXPECTED;
-    LOG_WARN("schema service is null");
-  } else if (OB_FAIL(GCTX.schema_service_->get_tenant_schema_guard(tenant_id, schema_guard))) {
-    LOG_WARN("get schema guard failed", K(ret));
-  } else if (OB_FAIL(schema_guard.get_tenant_system_variable(tenant_id, SYS_VAR_OB_SQL_WORK_AREA_PERCENTAGE, var_schema))) {
-    LOG_WARN("get tenant system variable failed", K(ret), K(tenant_id));
-  } else if (OB_ISNULL(var_schema)) {
-    ret = OB_ERR_UNEXPECTED;
-    LOG_WARN("var_schema is null");
-  } else if (OB_FAIL(var_schema->get_value(&allocator_, NULL, value))) {
-    LOG_WARN("get value from var_schema failed", K(ret), K(*var_schema));
-  } else if (OB_FAIL(value.get_int(pctg))) {
-    LOG_WARN("get int from value failed", K(ret), K(value));
-  }
+  pctg = 0;
+  // ObSchemaGetterGuard schema_guard;
+  // const ObSysVarSchema *var_schema = NULL;
+  // ObObj value;
+  // if (OB_ISNULL(GCTX.schema_service_)) {
+  //   ret = OB_ERR_UNEXPECTED;
+  //   LOG_WARN("schema service is null");
+  // } else if (OB_FAIL(GCTX.schema_service_->get_tenant_schema_guard(tenant_id, schema_guard))) {
+  //   LOG_WARN("get schema guard failed", K(ret));
+  // } else if (OB_FAIL(schema_guard.get_tenant_system_variable(tenant_id, SYS_VAR_OB_SQL_WORK_AREA_PERCENTAGE, var_schema))) {
+  //   LOG_WARN("get tenant system variable failed", K(ret), K(tenant_id));
+  // } else if (OB_ISNULL(var_schema)) {
+  //   ret = OB_ERR_UNEXPECTED;
+  //   LOG_WARN("var_schema is null");
+  // } else if (OB_FAIL(var_schema->get_value(&allocator_, NULL, value))) {
+  //   LOG_WARN("get value from var_schema failed", K(ret), K(*var_schema));
+  // } else if (OB_FAIL(value.get_int(pctg))) {
+  //   LOG_WARN("get int from value failed", K(ret), K(value));
+  // }
   return ret;
 }
 

@@ -1149,7 +1149,7 @@ int ObMultiVersionSchemaService::get_cluster_schema_guard(
  *   - tenant_schema_version: Indicates the version of the schema of the user tenant except the system tables.
  *   - sys_schema_version: Indicates the version of the schema of the system tenant and the sys tables in user tenant.
  */
-int ObMultiVersionSchemaService::get_tenant_schema_guard(
+int ObMultiVersionSchemaService:: get_tenant_schema_guard(
     const uint64_t tenant_id,
     ObSchemaGetterGuard &guard,
     int64_t tenant_schema_version/* = common::OB_INVALID_VERSION*/,

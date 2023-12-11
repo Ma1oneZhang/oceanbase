@@ -102,7 +102,7 @@ int ObDDLService::create_sys_table_schemas(
         if (OB_FAIL(ddl_operator.create_table(table, trans, ddl_stmt,
                                               need_sync_schema_version,
                                               false /*is_truncate_table*/))) {
-          LOG_WARN("add table schema failed", KR(ret), K(table_id),
+          LOG_WARN("add table schema failed", K(i), KR(ret), K(table_id),
                    K(table_name));
         } else {
           LOG_INFO("add table schema succeed", K(i), K(table_id),
@@ -222,7 +222,7 @@ int ObDDLService::init_tenant_schema(
               trans.start(sql_proxy_, tenant_id, refreshed_schema_version))) {
         LOG_WARN("fail to start trans", KR(ret), K(tenant_id));
       }
-      constexpr int batch_size = 50;
+      constexpr int batch_size = 120;
       std::vector<std::future<void>> futures;
       for (int64_t i = 0; i < tables.count(); i += batch_size) {
         auto start = i, end = std::min(tables.count(), i + batch_size);
@@ -230,8 +230,8 @@ int ObDDLService::init_tenant_schema(
           set_thread_name("DDLThQueue");
           ObDDLSQLTransaction trans(schema_service_, true, true, false, false);
           trans.start(sql_proxy_, tenant_id, refreshed_schema_version);
-            create_sys_table_schemas(ddl_operator, trans, tables, start, end,
-                                       true);
+          create_sys_table_schemas(ddl_operator, trans, tables, start, end,
+                                   true);
           if (ret != OB_SUCCESS) {
             LOG_WARN("fail to create sys tables", KR(ret), K(tenant_id));
           }

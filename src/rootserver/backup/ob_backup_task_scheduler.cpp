@@ -1246,16 +1246,16 @@ void ObBackupTaskScheduler::run2()
 int ObBackupTaskScheduler::check_tenant_status_normal_(bool &is_normal)
 {
   int ret = OB_SUCCESS;
-  is_normal = false;
-  share::schema::ObSchemaGetterGuard guard;
-  const share::schema::ObSimpleTenantSchema *tenant_info = nullptr;
-  if (OB_FAIL(schema_service_->get_tenant_schema_guard(tenant_id_, guard))) {
-    LOG_WARN("fail to get schema guard", K(ret), K(tenant_id_));
-  } else if (OB_FAIL(guard.get_tenant_info(tenant_id_, tenant_info))) {
-    LOG_WARN("fail to get tenant info", K(ret), K(tenant_id_));
-  } else if (OB_NOT_NULL(tenant_info) && tenant_info->is_normal()) {
-    is_normal = true;
-  }
+  is_normal = true;
+  // share::schema::ObSchemaGetterGuard guard;
+  // const share::schema::ObSimpleTenantSchema *tenant_info = nullptr;
+  // if (OB_FAIL(schema_service_->get_tenant_schema_guard(tenant_id_, guard))) {
+  //   LOG_WARN("fail to get schema guard", K(ret), K(tenant_id_));
+  // } else if (OB_FAIL(guard.get_tenant_info(tenant_id_, tenant_info))) {
+  //   LOG_WARN("fail to get tenant info", K(ret), K(tenant_id_));
+  // } else if (OB_NOT_NULL(tenant_info) && tenant_info->is_normal()) {
+  //   is_normal = true;
+  // }
   return ret;
 }
 
