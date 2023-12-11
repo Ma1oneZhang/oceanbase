@@ -182,6 +182,7 @@ void ObHeartbeatService::do_work()
   } else if (OB_FAIL(check_upgrade_compat_())) {
     LOG_WARN("fail to check upgrade compatibility", KR(ret));
   } else {
+    bool find = false;
     while (!has_set_stop()) {
       uint64_t thread_idx = get_thread_idx();
       int64_t thread_cnt = THREAD_COUNT;
@@ -195,6 +196,7 @@ void ObHeartbeatService::do_work()
             LOG_WARN("fail to send heartbeat", KR(ret));
           }
           if(hb_responses_.count()>0) {
+            find = true;
             if (OB_FAIL(manage_heartbeat_())) {
               LOG_WARN("fail to manage heartbeat", KR(ret));
             }
@@ -210,7 +212,11 @@ void ObHeartbeatService::do_work()
         // } else {
         //   idle(HB_IDLE_TIME_US);
         // }
-        idle(HB_FAILED_IDLE_TIME_US);
+        if(find) {
+          idle(HB_FAILED_IDLE_TIME_US);
+        } else {
+          idle(50000);
+        }
       }
     } // end while
   }
@@ -221,8 +227,8 @@ int ObHeartbeatService::check_upgrade_compat_()
   while (!is_service_enabled_ && !has_set_stop()) {
     if (OB_FAIL(check_is_service_enabled_())) {
       LOG_WARN("fail to check whether the heartbeat service is enabled", KR(ret));
+      idle(HB_IDLE_TIME_US);
     }
-    idle(HB_IDLE_TIME_US);
   }
   if (has_set_stop()) {
     ret = OB_NOT_MASTER;
