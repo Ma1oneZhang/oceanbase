@@ -2435,6 +2435,7 @@ int ObTableSqlService::create_table(ObTableSchema &table,
   opt.database_id_ = table.get_database_id();
   opt.tablegroup_id_ = table.get_tablegroup_id();
   opt.table_id_ = table.get_table_id();
+  opt.refresh_schema_ = table.refresh_schema_;
   if (is_truncate_table) {
     opt.op_type_ = OB_DDL_TRUNCATE_TABLE_CREATE;
   } else {
@@ -4272,9 +4273,10 @@ int ObTableSqlService::log_operation_wrapper(
   } else if (OB_FAIL(log_operation(opt, sql_client))) {
     LOG_WARN("failed to log operation", K(opt), K(ret));
   } else if (is_core_table(table_id)) {
-    if (OB_FAIL(log_core_operation(sql_client, exec_tenant_id, schema_version))) {
-      LOG_WARN("log_core_version failed", K(ret), K(exec_tenant_id), K(schema_version));
-    }
+    if (opt.refresh_schema_)
+      if (OB_FAIL(log_core_operation(sql_client, exec_tenant_id, schema_version))) {
+        LOG_WARN("log_core_version failed", K(ret), K(exec_tenant_id), K(schema_version));
+      }
   }
   return ret;
 }

@@ -12,6 +12,7 @@
 
 #define USING_LOG_PREFIX RS
 #include "ob_heartbeat_service.h"
+#include <chrono>
 
 #include "share/ob_define.h"
 #include "share/ob_service_epoch_proxy.h"
@@ -193,17 +194,23 @@ void ObHeartbeatService::do_work()
           if (OB_FAIL(send_heartbeat_())) {
             LOG_WARN("fail to send heartbeat", KR(ret));
           }
+          if(hb_responses_.count()>0) {
+            if (OB_FAIL(manage_heartbeat_())) {
+              LOG_WARN("fail to manage heartbeat", KR(ret));
+            }
+          }
         } else { // 1 == thread_idx
           ObCurTraceId::init(GCONF.self_addr_);
           if (OB_FAIL(manage_heartbeat_())) {
             LOG_WARN("fail to manage heartbeat", KR(ret));
           }
         }
-        if(OB_FAIL(ret)) {
-          idle(HB_FAILED_IDLE_TIME_US);
-        } else {
-          idle(HB_IDLE_TIME_US);
-        }
+        // if(OB_FAIL(ret)) {
+        //   idle(HB_FAILED_IDLE_TIME_US);
+        // } else {
+        //   idle(HB_IDLE_TIME_US);
+        // }
+        idle(HB_FAILED_IDLE_TIME_US);
       }
     } // end while
   }
@@ -1060,7 +1067,25 @@ int ObHeartbeatService::update_table_for_server_with_hb_response_(
       }
     }
     // *********  check start_service_time ********* //
-    if (OB_SUCC(ret) && server_info_in_table.get_start_service_time() != hb_response.get_start_service_time()) {
+    if(OB_SUCC(ret) && hb_response.get_start_service_time() == 0 && server_info_in_table.get_start_service_time() == 0)
+    {
+      auto currentTime = std::chrono::system_clock::now();
+      auto microseconds = std::chrono::time_point_cast<std::chrono::microseconds>(currentTime);
+      auto timestamp = microseconds.time_since_epoch().count();
+      int64_t timestamp_int64 = static_cast<int64_t>(timestamp);
+      if (OB_FAIL(ObServerTableOperator::update_start_service_time(
+          trans,
+          server,
+          server_info_in_table.get_start_service_time(), // old value
+          timestamp_int64))) {
+        HBS_LOG_WARN("fail to update start service time", KR(ret), K(server),
+            K(server_info_in_table.get_start_service_time()), K(hb_response.get_start_service_time()));
+      } else {
+        ROOTSERVICE_EVENT_ADD("server", "start_service", "server", server);
+        HBS_LOG_INFO("start service time is updated", K(server),
+            K(server_info_in_table.get_start_service_time()), K(hb_response.get_start_service_time()));
+      }
+    } else if (OB_SUCC(ret) && server_info_in_table.get_start_service_time() != hb_response.get_start_service_time()) {
       if (OB_FAIL(ObServerTableOperator::update_start_service_time(
           trans,
           server,

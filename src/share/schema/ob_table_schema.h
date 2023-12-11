@@ -1473,6 +1473,8 @@ public:
   }
   DECLARE_VIRTUAL_TO_STRING;
 
+  bool refresh_schema_ = false;
+
 protected:
   int add_col_to_id_hash_array(ObColumnSchemaV2 *column);
   int remove_col_from_id_hash_array(const ObColumnSchemaV2 *column);

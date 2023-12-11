@@ -389,6 +389,8 @@ public:
   virtual ~ObSchemaOperation() = default;
   int64_t  schema_version_;
   uint64_t tenant_id_;
+
+  bool refresh_schema_;
   union {
     uint64_t user_id_;
     uint64_t grantee_id_;

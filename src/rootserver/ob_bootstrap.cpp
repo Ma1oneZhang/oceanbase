@@ -1003,7 +1003,7 @@ int ObBootstrap::parallel_create_schema(
               retry_times++;
               ret = OB_SUCCESS;
               LOG_INFO("schema error while create table, need retry", KR(ret), K(retry_times));
-              usleep(1 * 1000 * 1000L); // 1s
+              usleep(100 * 1000L); // 0.1s
             }
           } else {
             LOG_WARN("batch create schema succeed", "table count", i + 1 - begin);
@@ -1061,9 +1061,24 @@ int ObBootstrap::batch_create_schema(ObDDLService &ddl_service,
       bool is_truncate_table = false;
       for (int64_t i = begin; OB_SUCC(ret) && i < end; ++i) {
         ObTableSchema &table = table_schemas.at(i);
+        if(is_core_table(table.get_table_id())){
+          if(i!= end-1) {
+            if(!is_core_table(table_schemas.at(i+1).get_table_id())){
+              table.refresh_schema_ = true;
+            } else {
+              table.refresh_schema_ = false;
+            }
+          } else {
+            table.refresh_schema_ = true;
+          }
+        } else {
+          table.refresh_schema_ = false;
+        }
+
         const ObString *ddl_stmt = NULL;
-        bool need_sync_schema_version = !(ObSysTableChecker::is_sys_table_index_tid(table.get_table_id()) ||
-                                          is_sys_lob_table(table.get_table_id()));
+        // bool need_sync_schema_version = !(ObSysTableChecker::is_sys_table_index_tid(table.get_table_id()) ||
+        //                                   is_sys_lob_table(table.get_table_id()));
+        bool need_sync_schema_version = false;
         int64_t start_time = ObTimeUtility::current_time();
         if (OB_FAIL(ddl_operator.create_table(table, trans, ddl_stmt,
                                               need_sync_schema_version,
